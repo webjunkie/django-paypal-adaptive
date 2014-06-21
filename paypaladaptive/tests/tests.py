@@ -8,8 +8,8 @@ from paypaladaptive.models import Preapproval, Payment
 from paypaladaptive.api import Receiver, ReceiverList
 from paypaladaptive.api.httpwrapper import UrlResponse
 
-from mock_url_request import MockUrlRequest
-from factories import PreapprovalFactory
+from .mock_url_request import MockUrlRequest
+from .factories import PreapprovalFactory
 
 
 if not settings.TEST_WITH_MOCK:

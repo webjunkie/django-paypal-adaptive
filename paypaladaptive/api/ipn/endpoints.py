@@ -1,16 +1,20 @@
 import logging
 import urllib
 
-from django.utils import simplejson
+try:
+    import json
+except ImportError:
+    import django.utils.simplejson as json
 
 from dateutil.parser import parse
 from moneyed import Money, Currency
 from pytz import utc
 
-from constants import *
 from paypaladaptive import settings
 from paypaladaptive.api.errors import IpnError
 from paypaladaptive.api.httpwrapper import UrlRequest
+
+from .constants import *
 
 
 logger = logging.getLogger(__name__)

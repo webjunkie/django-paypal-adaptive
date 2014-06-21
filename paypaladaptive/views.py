@@ -2,7 +2,6 @@
 Paypal Adaptive Payments supporting views
 
 """
-
 import logging
 
 from django.contrib.auth.decorators import login_required
@@ -16,10 +15,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-import settings
-from api.ipn import constants
-from models import Payment, Preapproval
-from decorators import takes_ipn
+from . import settings
+from .api.ipn import constants
+from .models import Payment, Preapproval
+from .decorators import takes_ipn
 
 
 logger = logging.getLogger(__name__)

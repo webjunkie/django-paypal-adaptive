@@ -19,7 +19,7 @@ Installation
 Install package from PyPI:
 
     $ pip install django-paypal-adaptive
-    
+
 Add to your project's `INSTALLED_APPS` setting:
 
 ```python
@@ -29,12 +29,18 @@ INSTALLED_APPS = (
 )
 ```
 
+Add to your url config:
+
+```python
+url(r'^paypaladaptive/', include('paypaladaptive.urls'))
+```
+
 Sync the database:
-    
+
     $ python manage.py syncdb
-    
+
 Or if you're using __South__ you might want to add an initial migration for future changes:
-    
+
     $ python manage.py schemamigration paypaladaptive --initial
     $ python manage.py syncdb --migrate
 
@@ -49,10 +55,10 @@ Create and process a preapproval for a payment.
 
 ```python
 from paypaladaptive.models import Preapproval
-from money.Money import Money
+from moneyed import Money, USD
 
 preapproval = Preapproval()
-preapproval.money = Money(2000, 'usd')
+preapproval.money = Money(2000, USD)
 preapproval.save()
 preapproval.process(next='/home/', displayMaxTotalAmount=True)
 
@@ -65,7 +71,7 @@ Create and process a payment to two receivers from a preapproval key.
 ```python
 from paypaladaptive.models import Payment
 from paypaladaptive.api import ReceiverList, Receiver
-from money.Money import Money
+from moneyed import Money, USD
 
 key = 'PA-2MT146200X905683P'
 platform = Receiver(amount=100, email="merchant@example.com", primary=False)
@@ -73,7 +79,7 @@ merchant = Receiver(amount=1900, email="mrbuyer@antonagestam.se", primary=True)
 receivers = ReceiverList([platform, merchant])
 
 p = Payment()
-p.money=Money(2000, 'USD')
+p.money=Money(2000, USD)
 p.save()
 p.process(receivers, preapproval_key=key)
 ```
@@ -106,7 +112,7 @@ therefor shares some data fields.
 
 __`PaypalAdaptive.money`__
 
-`money` is a python-money MoneyField. MoneyField extends Django's DecimalField
+`money` is a django-money MoneyField. MoneyField extends Django's DecimalField
 so has max_digits and decimal_places attributes that can be set with the
 `PAYPAL_MAX_DIGITS` and `PAYPAL_DECIMAL_PLACES` settings.
 
@@ -182,7 +188,7 @@ Settings
 
 **`django.conf.settings.PAYPAL_APPLICATION_ID`**
 
-Your Paypal application ID. Will default to `APP-80W284485P519543T` if 
+Your Paypal application ID. Will default to `APP-80W284485P519543T` if
 `DEBUG` is set to `True`.
 
 **`django.conf.settings.PAYPAL_USERID`**
@@ -204,6 +210,15 @@ Paypal Email
 **`django.conf.settings.PAYPAL_USE_IPN`**
 
 Whether or not to listen for incoming IPN messages. Defaults to `True`.
+
+**`django.conf.settings.PAYPAL_IPN_HTTP_PROTOCOL`**
+
+'http' or 'https'. Defaults to settings.DEFAULT_HTTP_PROTOCOL. If settings.DEFAULT_HTTP_PROTOCOL is not set it defaults to 'http'.
+
+**`django.conf.settings.PAYPAL_IPN_DOMAIN`**
+
+Default is None in which case Site.objects.get_current().domain is used.
+Useful if you want to test the IPN in localhost (e.g. https://ngrok.com/).
 
 **`django.conf.settings.PAYPAL_USE_DELAYED_UPDATES`**
 
@@ -236,7 +251,7 @@ Run tests
 To run the tests, first install the test requirements:
 
     $ [sudo] pip install -r requirements_test.txt --use-mirrors
-    
+
 The script that runs the tests simulates an installed Django app and is located
 in `runtests.py`. Execute it like this:
 

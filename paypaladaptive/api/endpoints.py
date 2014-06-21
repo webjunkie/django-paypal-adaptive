@@ -1,17 +1,20 @@
 """Endpoints for (parts of) Paypal Adaptive API."""
-
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
-from django.utils import simplejson as json
+try:
+    import json
+except ImportError:
+    import django.utils.simplejson as json
 
 from moneyed import Money
 
 from paypaladaptive import settings
 
-from errors import *
-from datatypes import ReceiverList
-from httpwrapper import UrlRequest
+from .errors import *
+from .datatypes import ReceiverList
+from .httpwrapper import UrlRequest
+
 
 logger = logging.getLogger(__name__)
 

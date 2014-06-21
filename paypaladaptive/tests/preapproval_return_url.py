@@ -3,7 +3,7 @@ from django.test import Client
 
 from paypaladaptive.models import Preapproval
 
-from factories import PreapprovalFactory
+from .factories import PreapprovalFactory
 
 
 class TestPreapprovalReturnURL(TestCase):

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.test import Client
 
-from ..models import Preapproval
+from paypaladaptive.models import Preapproval
 
 from .factories import PreapprovalFactory
 from .helpers import mock_ipn_call

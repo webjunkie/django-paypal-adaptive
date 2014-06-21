@@ -1,1 +1,1 @@
-from endpoints import IPN
+from .endpoints import IPN

@@ -2,7 +2,8 @@ from django.test import TestCase
 
 from moneyed import Money
 
-from ..models import Payment
+from paypaladaptive.models import Payment
+
 from .factories import PaymentFactory
 
 

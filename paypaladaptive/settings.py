@@ -4,6 +4,7 @@ from django.conf import settings
 
 DEBUG = getattr(settings, "DEBUG", False)
 
+
 if DEBUG:
     # use sandboxes while in debug mode
     PAYPAL_ENDPOINT = 'https://svcs.sandbox.paypal.com/AdaptivePayments/'
@@ -25,6 +26,12 @@ PAYPAL_SIGNATURE = settings.PAYPAL_SIGNATURE
 PAYPAL_EMAIL = settings.PAYPAL_EMAIL
 
 USE_IPN = getattr(settings, 'PAYPAL_USE_IPN', True)
+IPN_DOMAIN = getattr(settings, 'PAYPAL_IPN_DOMAIN', None)
+IPN_HTTP_PROTOCOL = getattr(
+    settings,
+    'PAYPAL_IPN_HTTP_PROTOCOL',
+    getattr(settings, 'DEFAULT_HTTP_PROTOCOL', 'http')
+    )
 USE_DELAYED_UPDATES = getattr(settings, 'PAYPAL_USE_DELAYED_UPDATES', False)
 DELAYED_UPDATE_COUNTDOWN = getattr(
     settings, 'PAYPAL_DELAYED_UPDATE_COUNTDOWN', timedelta(minutes=60))

@@ -1,4 +1,7 @@
-import json
+try:
+    import json
+except ImportError:
+    import django.utils.simplejson as json
 
 from django.test import TestCase
 
@@ -43,7 +46,7 @@ class TestPreapprovalUpdate(TestCase):
                     'maxNumberOfPayments': 1}
         self.assertEqual(
             'used', self.preapproval._parse_update_status(response))
-        
+
         response = {'status': 'ACTIVE', 'approved': 'true'}
         self.assertEqual(
             'approved', self.preapproval._parse_update_status(response))

@@ -1,9 +1,13 @@
-import json
+try:
+    import json
+except ImportError:
+    import django.utils.simplejson as json
 
 from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
 
 from paypaladaptive import settings
+from paypaladaptive.helpers import get_http_protocol
 
 
 class MockUrlRequest(object):
@@ -58,7 +62,7 @@ class MockUrlRequest(object):
         """"Helper function for return and cancel urls"""
         current_site = Site.objects.get_current()
         return_url = reverse(template_name, kwargs=kwargs)
-        assert url == "http://%s%s" % (current_site, return_url)
+        assert url == "%s://%s%s" % (get_http_protocol(), current_site, return_url)
 
     @property
     def response(self):

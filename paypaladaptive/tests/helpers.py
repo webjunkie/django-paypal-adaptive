@@ -2,7 +2,8 @@ import django.test as test
 
 from mock import patch
 
-from ..api.httpwrapper import UrlRequest, UrlResponse
+from paypaladaptive.api.httpwrapper import UrlRequest, UrlResponse
+
 
 class MockIPNVerifyRequest(UrlRequest):
     def call(self, url, data=None, headers=None):

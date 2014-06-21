@@ -5,8 +5,8 @@ Paypal Adaptive Payment callback and IPN URLs
 
 from django.conf.urls import patterns, url
 
-import views
-import settings
+from . import views
+from . import settings
 
 
 urlpatterns = patterns(

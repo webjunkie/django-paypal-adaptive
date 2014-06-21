@@ -1,8 +1,11 @@
-from paypaladaptive.models import Payment, Preapproval, PaypalAdaptive
+import datetime
+
 import factory
 import uuid
+
 from moneyed import Money
-import datetime
+
+from paypaladaptive.models import Payment, Preapproval, PaypalAdaptive
 
 
 class PaypalAdaptiveFactory(factory.DjangoModelFactory):

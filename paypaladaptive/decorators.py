@@ -2,10 +2,12 @@ import logging
 
 from django.http import HttpResponseBadRequest
 
-from api.ipn import IPN
-from api import IpnError
+from .api.ipn import IPN
+from .api import IpnError
+
 
 logger = logging.getLogger(__name__)
+
 
 def takes_ipn(function):
     def _view(request, *args, **kwargs):

@@ -8,30 +8,32 @@ Created on Jun 14, 2011
 from django import forms
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, to_locale, get_language
-import settings
+
+from . import  settings
+
 
 def paypal_image_url(type='pay'):
     '''
     Due to the way Paypal supports localization, we can't ask for a valid two character locale.
     So if our locale is such a one we'll have to modify it to fit Paypal's expectations.
-    
+
     eg: 'en' -> 'en_US'
     '''
     current_locale = to_locale(get_language())
     if current_locale.find('_') == -1:
-        current_locale = "%s_%s" % (current_locale, 
+        current_locale = "%s_%s" % (current_locale,
                                     current_locale.upper() if current_locale != 'en' else 'US')
 
     if type == 'pay':
         return 'https://www.paypal.com/%s/i/btn/btn_dg_pay_w_paypal.gif' % current_locale
-    
+
     raise ValueError('Unknown image type')
- 
-    
+
+
 class PayPalAdaptiveEmbeddedForm(forms.Form):
     """
     Form used to provide access to an embedded checkout form from Paypal.
-    
+
     You must provide the form with a valid paykey from the Pay API operation.
     """
     expType = forms.CharField(initial='light', widget=forms.HiddenInput)
@@ -44,7 +46,7 @@ class PayPalAdaptiveEmbeddedForm(forms.Form):
         self.submit_title = submit_title
 
     def render(self):
-        
+
         return mark_safe(u"""
             <form action="%(action)s" target="PPDGFrame">
                 %(form)s
@@ -54,7 +56,7 @@ class PayPalAdaptiveEmbeddedForm(forms.Form):
                 var dgFlow;
                 window.onload = function() {
                     dgFlow = new PAYPAL.apps.DGFlow({ trigger: 'submitBtn' });
-                } 
+                }
             </script>
             """ % {'action': settings.EMBEDDED_ENDPOINT,
                    'form': self.as_p(),
@@ -62,12 +64,12 @@ class PayPalAdaptiveEmbeddedForm(forms.Form):
                    'submit_title': self.submit_title})
 
     class Media:
-        js = ('http://www.paypalobjects.com/js/external/dg.js',)
-        
+        js = ('https://www.paypalobjects.com/js/external/dg.js',)
+
 class PayPalAdaptiveEmbeddedPreapprovalForm(forms.Form):
     """
     Form used to provide access to an embedded checkout form from Paypal.
-    
+
     You must provide the form with a valid preapproval from the Pay API operation.
     """
     expType = forms.CharField(initial='light', widget=forms.HiddenInput)
@@ -82,7 +84,7 @@ class PayPalAdaptiveEmbeddedPreapprovalForm(forms.Form):
         self.initial['_cmd'] = "_ap-preapproval"
 
     def render(self):
-        
+
         return mark_safe(u"""
             <form action="%(action)s" target="PPDGFrame">
                 %(form)s
@@ -92,7 +94,7 @@ class PayPalAdaptiveEmbeddedPreapprovalForm(forms.Form):
                 var dgFlow;
                 window.onload = function() {
                     dgFlow = new PAYPAL.apps.DGFlow({ trigger: 'submitBtn' });
-                } 
+                }
             </script>
             """ % {'action': settings.EMBEDDED_ENDPOINT,
                    'form': self.as_p(),
@@ -100,4 +102,4 @@ class PayPalAdaptiveEmbeddedPreapprovalForm(forms.Form):
                    'submit_title': self.submit_title})
 
     class Media:
-        js = ('http://www.paypalobjects.com/js/external/dg.js',)
+        js = ('https://www.paypalobjects.com/js/external/dg.js',)

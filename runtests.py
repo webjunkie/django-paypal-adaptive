@@ -96,7 +96,14 @@ def main():
             }
         }
     })
-    call_command("test", app_name)
+
+    from django_nose import NoseTestSuiteRunner
+
+    test_runner = NoseTestSuiteRunner(verbosity=1)
+    failures = test_runner.run_tests(["."])
+
+    if failures:
+        sys.exit(failures)
 
 if __name__ == "__main__":
     main()

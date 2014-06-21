@@ -6,39 +6,21 @@ from django.core.urlresolvers import reverse
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.sites.models import Site
-from django.utils import simplejson as json
+from django.utils import timezone
+try:
+    import json
+except ImportError:
+    import django.utils.simplejson as json
 
 from djmoney.models.fields import MoneyField
+from shortuuidfield import ShortUUIDField
 
-import settings
-import api
+from .helpers import get_http_protocol
+from . import settings
+from . import api
 
-
-try:
-    import uuid
-except ImportError:
-    from django.utils import uuid
 
 logger = logging.getLogger(__name__)
-
-
-class UUIDField(models.CharField):
-    """Django db field using python's uuid4 library"""
-
-    def __init__(self, *args, **kwargs):
-        kwargs['max_length'] = kwargs.get('max_length', 32)
-        models.CharField.__init__(self, *args, **kwargs)
-
-    def pre_save(self, model_instance, add):
-        if add:
-            value = getattr(model_instance, self.attname)
-            if not value:
-                value = unicode(uuid.uuid4().hex)
-            setattr(model_instance, self.attname, value)
-        else:
-            value = super(models.CharField, self).pre_save(model_instance, add)
-
-        return value
 
 
 class PaypalAdaptive(models.Model):
@@ -46,10 +28,13 @@ class PaypalAdaptive(models.Model):
     money = MoneyField(_(u'money'), max_digits=settings.MAX_DIGITS,
                        decimal_places=settings.DECIMAL_PLACES)
     created_date = models.DateTimeField(_(u'created on'), auto_now_add=True)
-    secret_uuid = UUIDField(_(u'secret UUID'))  # to verify return_url
+    secret_uuid = ShortUUIDField(_(u'secret UUID'))  # to verify return_url
     debug_request = models.TextField(_(u'raw request'), blank=True, null=True)
     debug_response = models.TextField(_(u'raw response'), blank=True,
                                       null=True)
+
+    class Meta:
+        abstract = True
 
     def call(self, endpoint_class, *args, **kwargs):
         endpoint = endpoint_class(*args, **kwargs)
@@ -81,14 +66,11 @@ class PaypalAdaptive(models.Model):
 
     @property
     def ipn_url(self):
-        current_site = Site.objects.get_current()
+        domain = settings.IPN_DOMAIN or Site.objects.get_current().domain
         kwargs = {'object_id': self.id,
                   'object_secret_uuid': self.secret_uuid}
         ipn_url = reverse('paypal-adaptive-ipn', kwargs=kwargs)
-        return "http://%s%s" % (current_site, ipn_url)
-
-    class Meta:
-        abstract = True
+        return "%s://%s%s" % (settings.IPN_HTTP_PROTOCOL, domain, ipn_url)
 
     def get_update_kwargs(self):
         return {}
@@ -159,14 +141,14 @@ class Payment(PaypalAdaptive):
         current_site = Site.objects.get_current()
         kwargs = {'payment_id': self.id, 'secret_uuid': self.secret_uuid}
         return_url = reverse('paypal-adaptive-payment-return', kwargs=kwargs)
-        return "http://%s%s" % (current_site, return_url)
+        return "%s://%s%s" % (get_http_protocol(), current_site, return_url)
 
     @property
     def cancel_url(self):
         current_site = Site.objects.get_current()
         kwargs = {'payment_id': self.id, 'secret_uuid': self.secret_uuid}
         cancel_url = reverse('paypal-adaptive-payment-cancel', kwargs=kwargs)
-        return "http://%s%s" % (current_site, cancel_url)
+        return "%s://%s%s" % (get_http_protocol(), current_site, cancel_url)
 
     @transaction.autocommit
     def process(self, receivers, preapproval=None, **kwargs):
@@ -317,7 +299,7 @@ class Preapproval(PaypalAdaptive):
 
     update_endpoint = api.PreapprovalDetails
     default_valid_range = timedelta(days=90)
-    default_valid_date = lambda: (datetime.now() +
+    default_valid_date = lambda: (timezone.now() +
                                   Preapproval.default_valid_range)
 
     STATUS_CHOICES = (
@@ -354,7 +336,7 @@ class Preapproval(PaypalAdaptive):
         kwargs = {'preapproval_id': self.id, 'secret_uuid': self.secret_uuid}
         return_url = reverse('paypal-adaptive-preapproval-return',
                              kwargs=kwargs)
-        return "http://%s%s" % (current_site, return_url)
+        return "%s://%s%s" % (get_http_protocol(), current_site, return_url)
 
     @property
     def cancel_url(self):
@@ -362,7 +344,7 @@ class Preapproval(PaypalAdaptive):
         kwargs = {'preapproval_id': self.id}
         cancel_url = reverse('paypal-adaptive-preapproval-cancel',
                              kwargs=kwargs)
-        return "http://%s%s" % (current_site, cancel_url)
+        return "%s://%s%s" % (get_http_protocol(), current_site, cancel_url)
 
     @transaction.autocommit
     def process(self, **kwargs):

@@ -3,9 +3,9 @@ from django.test import TestCase
 from mock import patch
 from moneyed import Money
 
-from .. import settings
-from ..models import Payment
-from ..api.datatypes import Receiver, ReceiverList
+from paypaladaptive import settings
+from paypaladaptive.models import Payment
+from paypaladaptive.api.datatypes import Receiver, ReceiverList
 
 
 class MockPaymentRequest(object):

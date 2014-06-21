@@ -1,3 +1,5 @@
+import urlparse
+
 import django.test as test
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
@@ -5,18 +7,19 @@ from django.http import HttpRequest
 
 from moneyed import Money
 import mock
-import urlparse
 
 from paypaladaptive.api.ipn import IPN
 from paypaladaptive.models import Payment, Preapproval
 from paypaladaptive.api.errors import IpnError
+from paypaladaptive.helpers import get_http_protocol
 
-from factories import PreapprovalFactory, PaymentFactory
-from helpers import (MockIPNVerifyRequest,
-                     MockIPNVerifyRequestFail,
-                     MockIPNVerifyRequestInvalid,
-                     MockIPNVerifyRequestInvalidCode,
-                     mock_ipn_call)
+from .factories import PreapprovalFactory, PaymentFactory
+from .helpers import (MockIPNVerifyRequest,
+                      MockIPNVerifyRequestFail,
+                      MockIPNVerifyRequestInvalid,
+                      MockIPNVerifyRequestInvalidCode,
+                      mock_ipn_call,
+                      )
 
 
 class TestPaymentIPN(test.TestCase):
@@ -109,7 +112,7 @@ class TestPaymentIPN(test.TestCase):
         kwargs = {'object_id': self.payment.id,
                   'object_secret_uuid': incorrect_UUID}
         internal_url = reverse('paypal-adaptive-ipn', kwargs=kwargs)
-        ipn_url = "http://%s%s" % (current_site, internal_url)
+        ipn_url = "%s://%s%s" % (get_http_protocol(), current_site, internal_url)
 
         money = "%s %s" % (self.payment.money.currency, self.payment.money.amount)
         data = {
@@ -140,7 +143,7 @@ class TestPaymentIPN(test.TestCase):
         kwargs = {'object_id': incorrect_object_id,
                   'object_secret_uuid': incorrect_UUID}
         internal_url = reverse('paypal-adaptive-ipn', kwargs=kwargs)
-        ipn_url = "http://%s%s" % (current_site, internal_url)
+        ipn_url = "%s://%s%s" % (get_http_protocol(), current_site, internal_url)
 
         money = '%s %s' % (self.payment.money.currency, self.payment.money.amount)
         data = {
