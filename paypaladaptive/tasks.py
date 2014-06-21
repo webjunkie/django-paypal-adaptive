@@ -11,7 +11,7 @@ logger = get_task_logger(__name__)
 def update_preapproval(preapproval_id):
     preapproval = Preapproval.objects.get(pk=preapproval_id)
     if preapproval.status != 'used':
-        logger.info('Updating Preapproval %i' % preapproval.id)
+        logger.info('Updating Preapproval %s', preapproval.id)
         preapproval.update()
 
 
@@ -19,5 +19,5 @@ def update_preapproval(preapproval_id):
 def update_payment(payment_id):
     payment = Payment.objects.get(pk=payment_id)
     if payment.status != 'completed':
-        logger.info('Updating Payment %i' % payment.id)
+        logger.info('Updating Payment %s', payment.id)
         payment.update()

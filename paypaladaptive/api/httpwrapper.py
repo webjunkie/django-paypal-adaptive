@@ -1,14 +1,16 @@
 import urllib2
 
 
-class UrlResponse:
+class UrlResponse(object):
+
     def __init__(self, data, meta, code):
         self.data = data
         self.meta = meta
         self.code = code
 
 
-class UrlRequest:
+class UrlRequest(object):
+
     def call(self, url, data=None, headers=None):
         if headers is None:
             headers = {}

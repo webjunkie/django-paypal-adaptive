@@ -44,10 +44,13 @@ def payment_cancel(request, payment_id, secret_uuid,
                    template="paypaladaptive/cancel.html"):
     """Handle incoming cancellation from paypal"""
 
-    logger.debug("Cancellation received for Payment %s" % payment_id)
+    logger.debug("Cancellation received for Payment %s", payment_id)
 
     payment = get_object_or_404(Payment, id=payment_id,
                                 secret_uuid=secret_uuid)
+
+    if payment.status in ('completed',):
+        return HttpResponseBadRequest()
 
     payment.status = 'canceled'
     payment.save()
@@ -64,23 +67,22 @@ def payment_return(request, payment_id, secret_uuid,
     the site and not a returned payment.
 
     """
-
-    logger.debug("Return received for Payment %s" % payment_id)
+    logger.debug("Return received for Payment %s", payment_id)
 
     payment = get_object_or_404(Payment, id=payment_id,
                                 secret_uuid=secret_uuid)
 
-    if payment.status not in ['created', 'completed']:
-        payment.status_detail = _(u"Expected status to be created or "
-                                  u"completed, not %s - duplicate "
-                                  u"transaction?") % payment.status
+    if secret_uuid != payment.secret_uuid:
+        payment.status_detail = (_(u"BuyReturn secret \"%s\" did not match")
+                                 % secret_uuid)
         payment.status = 'error'
         payment.save()
         return HttpResponseServerError('Unexpected error')
 
-    elif secret_uuid != payment.secret_uuid:
-        payment.status_detail = (_(u"BuyReturn secret \"%s\" did not match")
-                                 % secret_uuid)
+    elif payment.status not in ['created', 'completed']:
+        payment.status_detail = _(u"Expected status to be created or "
+                                  u"completed, not %s - duplicate "
+                                  u"transaction?") % payment.status
         payment.status = 'error'
         payment.save()
         return HttpResponseServerError('Unexpected error')
@@ -102,7 +104,7 @@ def preapproval_cancel(request, preapproval_id,
                        template="paypaladaptive/cancel.html"):
     """Incoming preapproval cancellation from paypal"""
 
-    logger.debug("Cancellation received for Preapproval %s" % preapproval_id)
+    logger.debug("Cancellation received for Preapproval %s", preapproval_id)
 
     get_object_or_404(Preapproval, id=preapproval_id)
 
@@ -121,7 +123,7 @@ def preapproval_return(request, preapproval_id, secret_uuid,
 
     preapproval = get_object_or_404(Preapproval, id=preapproval_id)
 
-    logger.info("Return received for Preapproval %s" % preapproval_id)
+    logger.info("Return received for Preapproval %s", preapproval_id)
 
     if preapproval.status not in ['created', 'approved']:
         preapproval.status_detail = _(
@@ -161,7 +163,7 @@ def ipn(request, object_id, object_secret_uuid, ipn):
 
     """
 
-    logger.debug("Incoming IPN call: " + str(request))
+    logger.debug("Incoming IPN call: %s", str(request))
 
     object_class = {
         constants.IPN_TYPE_PAYMENT: Payment,
@@ -173,7 +175,7 @@ def ipn(request, object_id, object_secret_uuid, ipn):
         obj = object_class.objects.get(pk=object_id)
     except object_class.DoesNotExist:
         logger.warning('Could not find %s ID %s, replying to IPN with '
-                       '404.' % (object_class.__name__, object_id))
+                       '404.', object_class.__name__, object_id)
         raise Http404
 
     if obj.secret_uuid != object_secret_uuid:
@@ -219,9 +221,10 @@ def ipn(request, object_id, object_secret_uuid, ipn):
             obj.status = 'approved'
     else:
         logger.warning(
-            'No action found for IPN Type "%s" with status "%s" (id: "%s", '
-            'secret_uuid: %s)'
-            % (ipn.type, ipn.status, obj.id, obj.secret_uuid))
+            'No action found for IPN Type "%s" with '
+            'status "%s" (id: "%s", secret_uuid: %s)',
+            ipn.type, ipn.status, obj.id, obj.secret_uuid
+            )
 
     obj.save()
 

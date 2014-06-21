@@ -53,9 +53,9 @@ class PaypalAdaptiveEndpoint(object):
         self.raw_response = request.response
         self.response = json.loads(request.response)
 
-        logger.debug('headers are: %s' % str(self.headers))
-        logger.debug('request is: %s' % str(self.data))
-        logger.debug('response is: %s' % str(self.raw_response))
+        logger.debug('headers are: %s', str(self.headers))
+        logger.debug('request is: %s', str(self.data))
+        logger.debug('response is: %s', str(self.raw_response))
 
         if ('responseEnvelope' not in self.response
                 or 'ack' not in self.response['responseEnvelope']
@@ -75,7 +75,6 @@ class PaypalAdaptiveEndpoint(object):
         a dict.
 
         """
-
         raise NotImplementedError("Endpoint class needs to override the "
                                   "prepare_data method.")
 

@@ -1,7 +1,7 @@
-from errors import ReceiverError
+from .errors import ReceiverError
 
 
-class Receiver():
+class Receiver(object):
     email = None
     amount = None
     primary = False
@@ -20,7 +20,7 @@ class Receiver():
         return self.email
 
 
-class ReceiverList():
+class ReceiverList(object):
     receivers = None
 
     def __init__(self, receivers=None):
@@ -28,6 +28,8 @@ class ReceiverList():
         if receivers is not None:
             for receiver in receivers:
                 self.append(receiver)
+
+        self.validate()
 
     def append(self, receiver):
         if not isinstance(receiver, Receiver):
@@ -45,10 +47,24 @@ class ReceiverList():
         n_primary = len(filter(lambda r: r.primary is True, self.receivers))
 
         if n_primary > 1:
-            raise ReceiverError("There can only be one primary Receiver")
+            raise ReceiverError("There can only be one primary Receiver.")
 
         return n_primary == 1
 
     @property
+    def chained(self):
+        return self.has_primary()
+
+    @property
     def total_amount(self):
         return sum([r.amount for r in self.receivers])
+
+    def validate_receiver_length(self):
+        if len(self.receivers) > 6:
+            raise ReceiverError("The maximum length of receivers is 6.")
+        return True
+
+    def validate(self):
+        # check if there is only one primary receiver
+        self.has_primary()
+        self.validate_receiver_length()

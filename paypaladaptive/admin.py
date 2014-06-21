@@ -12,6 +12,7 @@ update_adaptive_instance.short_description = u"Update"
 
 class PaymentAdmin(admin.ModelAdmin):
     actions = [update_adaptive_instance]
+    list_display = ('created_date', 'pay_key', 'status',)
 
 
 class PreapprovalAdmin(admin.ModelAdmin):

@@ -91,7 +91,7 @@ class PaypalAdaptive(models.Model):
                                      **self.get_update_kwargs())
         except ValueError, e:
             model_name = self.__class__.__name__
-            logger.warning('Could not update %s:\n%s' % (model_name, e.message))
+            logger.warning('Could not update %s:\n%s', model_name, e.message)
         else:
             response = endpoint.response
 
@@ -101,6 +101,8 @@ class PaypalAdaptive(models.Model):
 
             if save:
                 self.save()
+
+        return response
 
 
 class Payment(PaypalAdaptive):
@@ -153,10 +155,17 @@ class Payment(PaypalAdaptive):
     @transaction.autocommit
     def process(self, receivers, preapproval=None, **kwargs):
         """Process the payment"""
+        if self.status != 'new':
+            raise ValueError(
+                "This payment instance is already processed, "
+                "it's status is not new."
+                )
 
-        endpoint_kwargs = {'money': self.money,
-                           'return_url': self.return_url,
-                           'cancel_url': self.cancel_url}
+        endpoint_kwargs = {
+            'money': self.money,
+            'return_url': self.return_url,
+            'cancel_url': self.cancel_url,
+            }
 
         # Update return_url with ?next param
         if 'next' in kwargs:
@@ -181,8 +190,6 @@ class Payment(PaypalAdaptive):
         if not isinstance(receivers, api.ReceiverList):
             raise ValueError("receivers must be an instance of "
                              "ReceiverList")
-        elif not receivers.has_primary() and settings.USE_CHAIN:
-            receivers.receivers[0].primary = True
 
         endpoint_kwargs.update({'receivers': receivers})
 
@@ -431,13 +438,3 @@ class Preapproval(PaypalAdaptive):
 
     def __unicode__(self):
         return self.preapproval_key
-
-
-try:
-    from south.modelsinspector import add_introspection_rules
-    # South support for the custom fields
-    add_introspection_rules([], ["^paypaladaptive\.models\.UUIDField"])
-    add_introspection_rules([], ["^paypaladaptive\.models\.MoneyField"])
-except ImportError:
-    # South is not installed
-    pass

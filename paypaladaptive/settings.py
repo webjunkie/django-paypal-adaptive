@@ -35,7 +35,6 @@ IPN_HTTP_PROTOCOL = getattr(
 USE_DELAYED_UPDATES = getattr(settings, 'PAYPAL_USE_DELAYED_UPDATES', False)
 DELAYED_UPDATE_COUNTDOWN = getattr(
     settings, 'PAYPAL_DELAYED_UPDATE_COUNTDOWN', timedelta(minutes=60))
-USE_CHAIN = getattr(settings, 'PAYPAL_USE_CHAIN', True)
 USE_EMBEDDED = getattr(settings, 'PAYPAL_USE_EMBEDDED', True)
 SHIPPING = getattr(settings, 'PAYPAL_USE_SHIPPING', False)
 

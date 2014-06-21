@@ -50,6 +50,101 @@ Usage
 
 Examples
 --------
+Test the calls with sandbox account emails or you'll probably get 'Account is restricted' errors.
+
+Simple payment:
+https://developer.paypal.com/webapps/developer/docs/classic/adaptive-payments/integration-guide/APIntro/#id0937N0Q0JY4
+
+```python
+from paypaladaptive.models import Preapproval
+from moneyed import Money, USD
+from paypaladaptive.api import ReceiverList, Receiver
+
+receiver = Receiver(amount=100, email="receiver1@example.com")
+receivers = ReceiverList([receiver])
+
+payment = Payment()
+payment.money = Money(receivers.total_amount, USD)
+payment.save()
+payment.process(receivers)
+
+# Redirect the user to the next_url() value
+redirect_url = payment.next_url()
+```
+
+Parallel payment with 2 receivers:
+
+```python
+from paypaladaptive.models import Preapproval
+from moneyed import Money, USD
+from paypaladaptive.api import ReceiverList, Receiver
+
+receiver1 = Receiver(amount=100, email="receiver1@example.com")
+receiver2 = Receiver(amount=1900, email="receiver2@example.com")
+receivers = ReceiverList([receiver1, receiver2])
+
+payment = Payment()
+payment.money = Money(receivers.total_amount, USD)
+payment.save()
+payment.process(receivers)
+
+# Redirect the user to the next_url() value
+redirect_url = payment.next_url()
+```
+
+Parallel payment with 2 receivers where the sender pays the fees and we also set reverseAllParallelPaymentsOnError to True:
+https://developer.paypal.com/webapps/developer/docs/classic/adaptive-payments/integration-guide/APIntro/#id091QF0
+Learn more about PAY API operation fields: https://developer.paypal.com/webapps/developer/docs/classic/api/adaptive-payments/Pay_API_Operation/
+
+```python
+from paypaladaptive.models import Preapproval
+from moneyed import Money, USD
+from paypaladaptive.api import ReceiverList, Receiver
+
+receiver1 = Receiver(amount=100, email="receiver1@example.com")
+receiver2 = Receiver(amount=1900, email="receiver2@example.com")
+receivers = ReceiverList([receiver1, receiver2])
+
+payment = Payment()
+payment.money = Money(receivers.total_amount, USD)
+payment.save()
+payment.process(
+    receivers,
+    reverseAllParallelPaymentsOnError=True,
+    feesPayer='SENDER',
+    )
+
+# Redirect the user to the next_url() value
+redirect_url = payment.next_url()
+
+response = payment.update(save=False)
+payment.debug_response['feesPayer'] # SENDER
+payment.debug_response['reverseAllParallelPaymentsOnError'] # true
+```
+
+Chained payment with 2 receivers:
+https://developer.paypal.com/webapps/developer/docs/classic/adaptive-payments/integration-guide/APIntro/#id091QF0I30YK
+Primary gets: $2
+Secodaries get: $4
+
+```python
+from paypaladaptive.models import Preapproval
+from moneyed import Money, USD
+from paypaladaptive.api import ReceiverList, Receiver
+
+primary = Receiver(amount=10, email="primary@example.com", primary=True)
+secondary1 = Receiver(amount=4, email="secondary1@example.com")
+secondary2 = Receiver(amount=4, email="secondary2@example.com")
+receivers = ReceiverList([primary, secondary1, secondary2])
+
+payment = Payment()
+payment.money = Money(primary.amount, USD)
+payment.save()
+payment.process(receivers)
+
+# Redirect the user to the next_url() value
+redirect_url = payment.next_url()
+```
 
 Create and process a preapproval for a payment.
 
