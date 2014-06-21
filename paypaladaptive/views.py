@@ -3,6 +3,7 @@ Paypal Adaptive Payments supporting views
 
 """
 import logging
+import time
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -43,7 +44,6 @@ def render(request, template, template_vars=None):
 def payment_cancel(request, payment_id, secret_uuid,
                    template="paypaladaptive/cancel.html"):
     """Handle incoming cancellation from paypal"""
-
     logger.debug("Cancellation received for Payment %s", payment_id)
 
     payment = get_object_or_404(Payment, id=payment_id,
@@ -162,7 +162,6 @@ def ipn(request, object_id, object_secret_uuid, ipn):
     Incoming IPN POST request from Paypal
 
     """
-
     logger.debug("Incoming IPN call: %s", str(request))
 
     object_class = {
@@ -178,28 +177,40 @@ def ipn(request, object_id, object_secret_uuid, ipn):
                        '404.', object_class.__name__, object_id)
         raise Http404
 
+    obj.sender_email = ipn.sender_email
+
     if obj.secret_uuid != object_secret_uuid:
         obj.status = 'error'
         obj.status_detail = ('IPN secret "%s" did not match db'
                              % object_secret_uuid)
+        logger.debug("Error detail: %s", obj.status_detail)
         obj.save()
-        return HttpResponseBadRequest('secret uuid mismatch')
+        return HttpResponseBadRequest()
 
     # IPN type-specific operations
     if ipn.type == constants.IPN_TYPE_PAYMENT:
-        obj.transaction_id = ipn.transactions[0].id
 
-        if obj.money != ipn.transactions[0].amount:
+        # if obj.pay_key != ipn.pay_key:
+        #     obj.status = 'error'
+        #     obj.status_detail = ('Pay Key mismatch: %s != %s', obj.pay_key, ipn.pay_key)
+        #     logger.debug("Error detail: %s", obj.status_detail)
+        #     obj.save()
+        #     return HttpResponseBadRequest()
+
+        ipn_total_money = ipn.get_transactions_total_money()
+        if obj.money != ipn_total_money:
             obj.status = 'error'
             obj.status_detail = ("IPN amounts didn't match. Payment requested "
                                  "%s. Payment made %s"
-                                 % (obj.money, ipn.transactions[0].amount))
+                                 % (obj.money, ipn_total_money))
+            logger.debug("Error detail: %s", obj.status_detail)
 
         # check payment status
         elif request.POST.get('status', '') != 'COMPLETED':
             obj.status = 'error'
             obj.status_detail = ('PayPal status was "%s"'
                                  % request.POST.get('status'))
+            logger.debug("Error detail: %s", obj.status_detail)
         else:
             obj.status = 'completed'
 
@@ -211,12 +222,15 @@ def ipn(request, object_id, object_secret_uuid, ipn):
                 "IPN amounts didn't match. Preapproval requested %s. "
                 "Preapproval made %s"
                 % (obj.money, ipn.max_total_amount_of_all_payments))
+            logger.debug("Error detail: %s", obj.status_detail)
         elif ipn.status == constants.IPN_STATUS_CANCELED:
             obj.status = 'canceled'
             obj.status_detail = 'Cancellation received via IPN'
+            logger.debug("Canceled detail: %s", obj.status_detail)
         elif not ipn.approved:
             obj.status = 'error'
             obj.status_detail = "The preapproval is not approved"
+            logger.debug("Error detail: %s", obj.status_detail)
         else:
             obj.status = 'approved'
     else:
@@ -228,5 +242,13 @@ def ipn(request, object_id, object_secret_uuid, ipn):
 
     obj.save()
 
-    # Ok, no content
-    return HttpResponse(status=204)
+    status_code = 204  # 200
+    if ipn.ipn_log is not None:
+        ipn_log = ipn.ipn_log
+        ipn_log.return_status_code = status_code
+        if ipn_log._start_time:
+            ipn_log.duration = time.time() - ipn_log._start_time
+        ipn_log.save()
+
+    return HttpResponse(status=status_code)
+

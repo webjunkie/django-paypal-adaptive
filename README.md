@@ -56,7 +56,7 @@ Simple payment:
 https://developer.paypal.com/webapps/developer/docs/classic/adaptive-payments/integration-guide/APIntro/#id0937N0Q0JY4
 
 ```python
-from paypaladaptive.models import Preapproval
+from paypaladaptive.models import Payment
 from moneyed import Money, USD
 from paypaladaptive.api import ReceiverList, Receiver
 
@@ -75,7 +75,7 @@ redirect_url = payment.next_url()
 Parallel payment with 2 receivers:
 
 ```python
-from paypaladaptive.models import Preapproval
+from paypaladaptive.models import Payment
 from moneyed import Money, USD
 from paypaladaptive.api import ReceiverList, Receiver
 
@@ -97,7 +97,7 @@ https://developer.paypal.com/webapps/developer/docs/classic/adaptive-payments/in
 Learn more about PAY API operation fields: https://developer.paypal.com/webapps/developer/docs/classic/api/adaptive-payments/Pay_API_Operation/
 
 ```python
-from paypaladaptive.models import Preapproval
+from paypaladaptive.models import Payment
 from moneyed import Money, USD
 from paypaladaptive.api import ReceiverList, Receiver
 
@@ -128,7 +128,7 @@ Primary gets: $2
 Secodaries get: $4
 
 ```python
-from paypaladaptive.models import Preapproval
+from paypaladaptive.models import Payment
 from moneyed import Money, USD
 from paypaladaptive.api import ReceiverList, Receiver
 

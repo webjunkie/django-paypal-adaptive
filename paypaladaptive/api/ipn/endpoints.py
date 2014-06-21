@@ -1,4 +1,5 @@
 import logging
+import time
 import urllib
 
 try:
@@ -13,6 +14,7 @@ from pytz import utc
 from paypaladaptive import settings
 from paypaladaptive.api.errors import IpnError
 from paypaladaptive.api.httpwrapper import UrlRequest
+from paypaladaptive.models import IPNLog
 
 from .constants import *
 
@@ -60,6 +62,14 @@ class IPN(object):
             return d
 
     def __init__(self, request):
+        ipn_log = None
+        if settings.IPN_LOG_ENABLED:
+            ipn_log = IPNLog()
+            ipn_log._start_time = time.time()
+            ipn_log.path = request.path
+            ipn_log.post = json.dumps(request.POST)
+            ipn_log.save()
+
         # verify that the request is paypal's
         url = '%s?cmd=_notify-validate' % settings.PAYPAL_PAYMENT_HOST
         post_data = {}
@@ -74,6 +84,9 @@ class IPN(object):
 
         # check response
         raw_response = verify_request.response
+        if ipn_log:
+            ipn_log.verify_request_response = raw_response
+
         if raw_response != 'VERIFIED':
             raise IpnError('PayPal response was "%s"' % raw_response)
 
@@ -92,7 +105,7 @@ class IPN(object):
         try:
             # payments and adjustments define these
             self.status = request.POST.get('status', None)
-            self.sender_email = request.POST.get('sender_email', None)
+            self.sender_email = request.POST.get('sender_email', '')
             self.action_type = request.POST.get('action_type', None)
             self.payment_request_date = IPN.process_date(request.POST.get('payment_request_date', None))
             self.reverse_all_parallel_payments_on_error = request.POST.get('reverse_all_parallel_payments_on_error', 'false') == 'true'
@@ -144,6 +157,10 @@ class IPN(object):
             and self.action_type not in [IPN_ACTION_TYPE_PAY,
                                          IPN_ACTION_TYPE_CREATE]):
             raise IpnError("unknown action type: %s" % self.action_type)
+
+        if ipn_log:
+            ipn_log.save()
+        self.ipn_log = ipn_log
 
     @classmethod
     def process_int(cls, int_str, default='null'):
@@ -210,3 +227,15 @@ class IPN(object):
             transdict = IPN.Transaction.slicedict(request.POST, 'transaction[%s].' % transaction_num)
             if len(transdict) > 0:
                 self.transactions.append(IPN.Transaction(**transdict))
+
+    def get_transactions_total_money(self):
+        """
+        Returns a Money object. Use it to verify that the payment amount
+        in an IPN matches the price we intend to charge.
+        """
+        if not self.transactions:
+            return None
+        return sum(
+            (tr.amount for tr in self.transactions if tr.amount),
+            Money(0, self.transactions[0].amount.currency)
+            )

@@ -18,7 +18,7 @@ class PaypalAdaptiveFactory(factory.DjangoModelFactory):
 
 class PaymentFactory(PaypalAdaptiveFactory):
     FACTORY_FOR = Payment
-    transaction_id = str(uuid.uuid4())[0:17]
+    # transaction_id = str(uuid.uuid4())[0:17]
 
 
 class PreapprovalFactory(PaypalAdaptiveFactory):

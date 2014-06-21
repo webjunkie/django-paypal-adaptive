@@ -32,6 +32,10 @@ class PaypalAdaptive(models.Model):
     debug_request = models.TextField(_(u'raw request'), blank=True, null=True)
     debug_response = models.TextField(_(u'raw response'), blank=True,
                                       null=True)
+    sender_email = models.EmailField(
+        _(u'sender email'),
+        blank=True,
+        )
 
     class Meta:
         abstract = True
@@ -78,13 +82,21 @@ class PaypalAdaptive(models.Model):
     def _parse_update_status_detail(self, response):
         return ''
 
+    def _parse_update_sender_email(self, response):
+        sender_email = ''
+        sender = response.get('sender', None)
+        if sender is not None:
+            # in preapproval responses there are only an accountID key for sender
+            sender_email = sender.get('email', '')
+        return response.get('senderEmail', sender_email)
+
     def update(self, save=True, fields=None):
         if not hasattr(self, 'update_endpoint'):
             raise NotImplementedError(
                 'Model need to specify an update endpoint')
 
         if fields is None:
-            fields = ['status', 'status_detail']
+            fields = ['status', 'status_detail', 'sender_email']
 
         try:
             __, endpoint = self.call(self.update_endpoint,
@@ -104,6 +116,14 @@ class PaypalAdaptive(models.Model):
 
         return response
 
+    @property
+    def debug_request_dict(self):
+        return json.loads(self.debug_request)
+
+    @property
+    def debug_response_dict(self):
+        return json.loads(self.debug_response)
+
 
 class Payment(PaypalAdaptive):
     """Models a payment made using Paypal"""
@@ -121,11 +141,9 @@ class Payment(PaypalAdaptive):
     )
 
     pay_key = models.CharField(_(u'paykey'), max_length=255)
-    transaction_id = models.CharField(_(u'paypal transaction ID'),
-                                      max_length=128, blank=True, null=True)
     status = models.CharField(_(u'status'), max_length=10,
                               choices=STATUS_CHOICES, default='new')
-    status_detail = models.CharField(_(u'detailed status'), max_length=2048)
+    status_detail = models.TextField(_(u'detailed status'), blank=True)
 
     def save(self, *args, **kwargs):
         is_new = self.id is None
@@ -296,7 +314,7 @@ class Refund(PaypalAdaptive):
     payment = models.OneToOneField(Payment)
     status = models.CharField(_(u'status'), max_length=10,
                               choices=STATUS_CHOICES, default='new')
-    status_detail = models.CharField(_(u'detailed status'), max_length=2048)
+    status_detail = models.TextField(_(u'detailed status'), blank=True)
 
     # TODO: finish model
 
@@ -324,7 +342,8 @@ class Preapproval(PaypalAdaptive):
     preapproval_key = models.CharField(_(u'preapprovalkey'), max_length=255)
     status = models.CharField(_(u'status'), max_length=10,
                               choices=STATUS_CHOICES, default='new')
-    status_detail = models.CharField(_(u'detailed status'), max_length=2048)
+    status_detail = models.TextField(_(u'detailed status'))
+    status_detail = models.TextField(_(u'detailed status'), blank=True)
 
     def save(self, *args, **kwargs):
         is_new = self.id is None
@@ -438,3 +457,16 @@ class Preapproval(PaypalAdaptive):
 
     def __unicode__(self):
         return self.preapproval_key
+
+
+class IPNLog(models.Model):
+    created_date = models.DateTimeField(_(u'created on'), auto_now_add=True)
+    path = models.TextField()
+    post = models.TextField()
+    verify_request_response = models.TextField()
+    return_status_code = models.SmallIntegerField(blank=True, null=True)
+    duration = models.PositiveIntegerField(blank=True, null=True)  # in seconds
+
+    class Meta:
+        verbose_name = _(u"IPN Log")
+        verbose_name_plural = _(u"IPN Log")

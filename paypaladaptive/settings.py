@@ -32,6 +32,7 @@ IPN_HTTP_PROTOCOL = getattr(
     'PAYPAL_IPN_HTTP_PROTOCOL',
     getattr(settings, 'DEFAULT_HTTP_PROTOCOL', 'http')
     )
+IPN_LOG_ENABLED = getattr(settings, 'PAYPAL_IPN_LOG_ENABLED', False)
 USE_DELAYED_UPDATES = getattr(settings, 'PAYPAL_USE_DELAYED_UPDATES', False)
 DELAYED_UPDATE_COUNTDOWN = getattr(
     settings, 'PAYPAL_DELAYED_UPDATE_COUNTDOWN', timedelta(minutes=60))
