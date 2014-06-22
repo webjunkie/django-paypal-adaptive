@@ -174,7 +174,7 @@ merchant = Receiver(amount=1900, email="mrbuyer@antonagestam.se", primary=True)
 receivers = ReceiverList([platform, merchant])
 
 p = Payment()
-p.money=Money(2000, USD)
+p.money = Money(2000, USD)
 p.save()
 p.process(receivers, preapproval_key=key)
 ```
@@ -198,7 +198,10 @@ PayPal country codes: https://developer.paypal.com/webapps/developer/docs/classi
 ```python
 convert_from = MoneyList([Money(10.55, USD), Money(20.64, GBP)])
 convert_to = ['CAD', 'AUD', 'HUF']
-response = ConvertCurrency(convert_from, convert_to, conversionType='BALANCE_TRANSFER', countryCode='HUF').call()
+response = ConvertCurrency(
+    convert_from, convert_to,
+    conversionType='BALANCE_TRANSFER', countryCode='HUF'
+    ).call()
 ```
 
 
