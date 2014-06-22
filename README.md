@@ -278,9 +278,6 @@ __`Payment.pay_key`__
 
 Corresponds to Paypal Adaptive's `payKey`
 
-__`Payment.transaction_id`__
-
-Corresponds to Paypal Adaptive's `transactionId`
 
 Preapproval
 -----------
