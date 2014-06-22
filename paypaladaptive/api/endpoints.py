@@ -12,7 +12,7 @@ from moneyed import Money
 from paypaladaptive import settings
 
 from .errors import *
-from .datatypes import ReceiverList
+from .datatypes import ReceiverList, MoneyList
 from .httpwrapper import UrlRequest
 
 
@@ -68,6 +68,8 @@ class PaypalAdaptiveEndpoint(object):
                 pass
 
             raise self.error_class(error_message)
+
+        return self.response
 
     def prepare_data(self, *args, **kwargs):
         """
@@ -255,3 +257,26 @@ class ShippingAddress(PaypalAdaptiveEndpoint):
 
     def prepare_data(self, paykey):
         return {'key': paykey}
+
+
+class ConvertCurrency(PaypalAdaptiveEndpoint):
+    url = '%s%s' % (settings.PAYPAL_ENDPOINT, 'ConvertCurrency')
+    error_class = PaypalAdaptiveApiError
+
+    def prepare_data(self, convert_from, convert_to, **kwargs):
+        if (not isinstance(convert_from, MoneyList) or len(convert_from) < 1):
+            raise ValueError("convert_from must be an instance of MoneyList")
+
+        data = {
+            'baseAmountList': {
+                'currency': convert_from.to_dict()
+            },
+            'convertToCurrencyList': {
+                'currencyCode': convert_to,
+            },
+        }
+
+        if kwargs:
+            data.update(**kwargs)
+
+        return data

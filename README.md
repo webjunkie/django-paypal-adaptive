@@ -179,6 +179,30 @@ p.save()
 p.process(receivers, preapproval_key=key)
 ```
 
+Convert currencies:
+In this case no models are involved, we just call the ConvertCurrency API endpoint.
+https://developer.paypal.com/webapps/developer/docs/classic/api/adaptive-payments/ConvertCurrency_API_Operation/
+
+```python
+from paypaladaptive.api import ConvertCurrency, MoneyList
+from moneyed import Money, USD, GBP
+
+convert_from = MoneyList([Money(10.55, USD), Money(20.64, GBP)])
+convert_to = ['CAD', 'AUD', 'HUF']
+response = ConvertCurrency(convert_from, convert_to).call()
+```
+
+specifiying conversionType and countryCode fields:
+PayPal country codes: https://developer.paypal.com/webapps/developer/docs/classic/api/country_codes/
+
+```python
+convert_from = MoneyList([Money(10.55, USD), Money(20.64, GBP)])
+convert_to = ['CAD', 'AUD', 'HUF']
+response = ConvertCurrency(convert_from, convert_to, conversionType='BALANCE_TRANSFER', countryCode='HUF').call()
+```
+
+
+
 IPN vs Delayed Updates
 ----------------------
 

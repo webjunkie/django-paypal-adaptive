@@ -162,8 +162,6 @@ def ipn(request, object_id, object_secret_uuid, ipn):
     Incoming IPN POST request from Paypal
 
     """
-    logger.debug("Incoming IPN call: %s", str(request))
-
     object_class = {
         constants.IPN_TYPE_PAYMENT: Payment,
         constants.IPN_TYPE_PREAPPROVAL: Preapproval,

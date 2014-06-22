@@ -68,3 +68,20 @@ class ReceiverList(object):
         # check if there is only one primary receiver
         self.has_primary()
         self.validate_receiver_length()
+
+
+class MoneyList(object):
+
+    def __init__(self, money_list=None):
+        self.money_list = money_list
+
+    def to_dict(self):
+        return [
+            {'code': money.currency.code, 'amount': str(money.amount)}
+            for money in self.money_list
+            ]
+
+    def __len__(self):
+        return len(self.money_list)
+
+CurrencyList = MoneyList

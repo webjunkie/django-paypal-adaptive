@@ -22,6 +22,37 @@ from .constants import *
 logger = logging.getLogger(__name__)
 
 
+class Transaction(object):
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        self.status = kwargs.get('status', None)
+        self.id_for_sender = kwargs.get('id_for_sender', None)
+        self.status_for_sender_txn = kwargs.get('status_for_sender_txn',
+                                                None)
+        self.refund_id = kwargs.get('refund_id', None)
+        self.refund_amount = IPN.process_money(kwargs.get('refund_amount',
+                                                          None))
+        self.refund_account_charged = kwargs.get('refund_account_charged',
+                                                 None)
+        self.receiver = kwargs.get('receiver', None)
+        self.invoiceId = kwargs.get('invoiceId', None)
+        self.amount = IPN.process_money(kwargs.get('amount', None))
+        self.is_primary_receiver = (kwargs.get('is_primary_receiver', '')
+                                    == 'true')
+
+    @classmethod
+    def slicedict(cls, d, s):
+        """
+        Iterates over a dict d and filters out all values whose key starts
+        with a string s and then removes that string s from the key and
+        returns a new dict.
+
+        """
+        d = dict((str(k.replace(s, '', 1)), v) for k,v in d.iteritems() if k.startswith(s))
+        return d
+
+
 class IPN(object):
     """
     Models the IPN API response
@@ -30,38 +61,11 @@ class IPN(object):
     handle IPNs from the standard Paypal checkout.
 
     """
-
-    class Transaction(object):
-        def __init__(self, **kwargs):
-            self.id = kwargs.get('id', None)
-            self.status = kwargs.get('status', None)
-            self.id_for_sender = kwargs.get('id_for_sender', None)
-            self.status_for_sender_txn = kwargs.get('status_for_sender_txn',
-                                                    None)
-            self.refund_id = kwargs.get('refund_id', None)
-            self.refund_amount = IPN.process_money(kwargs.get('refund_amount',
-                                                              None))
-            self.refund_account_charged = kwargs.get('refund_account_charged',
-                                                     None)
-            self.receiver = kwargs.get('receiver', None)
-            self.invoiceId = kwargs.get('invoiceId', None)
-            self.amount = IPN.process_money(kwargs.get('amount', None))
-            self.is_primary_receiver = (kwargs.get('is_primary_receiver', '')
-                                        == 'true')
-
-        @classmethod
-        def slicedict(cls, d, s):
-            """
-            Iterates over a dict d and filters out all values whose key starts
-            with a string s and then removes that string s from the key and
-            returns a new dict.
-
-            """
-
-            d = dict((str(k.replace(s, '', 1)), v) for k,v in d.iteritems() if k.startswith(s))
-            return d
-
     def __init__(self, request):
+        self.charset = request.POST.get('charset', None)
+        logger.debug("charset: %s", self.charset)
+        # logger.debug("request body: %s", request.body)
+
         ipn_log = None
         if settings.IPN_LOG_ENABLED:
             ipn_log = IPNLog()
@@ -77,6 +81,7 @@ class IPN(object):
             post_data[k] = unicode(v).encode('utf-8')
         data = urllib.urlencode(post_data)
         verify_request = UrlRequest().call(url, data=data)
+        # verify_request = UrlRequest().call(url, data=request.body)
 
         # check code
         if verify_request.code != 200:
@@ -86,6 +91,7 @@ class IPN(object):
         raw_response = verify_request.response
         if ipn_log:
             ipn_log.verify_request_response = raw_response
+            ipn_log.save()
 
         if raw_response != 'VERIFIED':
             raise IpnError('PayPal response was "%s"' % raw_response)
@@ -169,7 +175,6 @@ class IPN(object):
         Doesn't trap the ValueError so bad values raise the exception.
 
         """
-
         val = default
 
         if int_str:
@@ -178,7 +183,6 @@ class IPN(object):
             except ValueError, e:
                 if default == 'null':
                     raise e
-
 
         return val
 
@@ -189,7 +193,6 @@ class IPN(object):
         code and 0.00 is the amount
 
         """
-
         if money_str:
             money_args = str(money_str).split(' ', 1)
             money_args.reverse()
@@ -205,7 +208,6 @@ class IPN(object):
         the timezone appears to always be (US) Pacific.
 
         """
-
         if not date_str:
             return None
 
@@ -217,16 +219,14 @@ class IPN(object):
         n is 0 - 5 inclusive. We'll attempt to pull POST dictionary keys
         matching each transaction and build an IPN. Transaction object from
         them.
-
         """
-
         self.transactions = []
 
         transaction_nums = range(6)
         for transaction_num in transaction_nums:
-            transdict = IPN.Transaction.slicedict(request.POST, 'transaction[%s].' % transaction_num)
+            transdict = Transaction.slicedict(request.POST, 'transaction[%s].' % transaction_num)
             if len(transdict) > 0:
-                self.transactions.append(IPN.Transaction(**transdict))
+                self.transactions.append(Transaction(**transdict))
 
     def get_transactions_total_money(self):
         """
