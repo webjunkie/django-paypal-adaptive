@@ -5,19 +5,10 @@ from django.conf import settings
 DEBUG = getattr(settings, "DEBUG", False)
 
 
-if DEBUG:
-    # use sandboxes while in debug mode
-    PAYPAL_ENDPOINT = 'https://svcs.sandbox.paypal.com/AdaptivePayments/'
-    PAYPAL_PAYMENT_HOST = 'https://www.sandbox.paypal.com/au/cgi-bin/webscr'
-    EMBEDDED_ENDPOINT = 'https://www.sandbox.paypal.com/webapps/adaptivepayment/flow/pay'
-
-    PAYPAL_APPLICATION_ID = 'APP-80W284485P519543T' # sandbox only
-else:
-    PAYPAL_ENDPOINT = 'https://svcs.paypal.com/AdaptivePayments/' # production
-    PAYPAL_PAYMENT_HOST = 'https://www.paypal.com/webscr' # production
-    EMBEDDED_ENDPOINT = 'https://paypal.com/webapps/adaptivepayment/flow/pay'
-
-    PAYPAL_APPLICATION_ID = settings.PAYPAL_APPLICATION_ID
+PAYPAL_ENDPOINT = getattr(settings, 'PAYPAL_ENDPOINT', 'https://svcs.sandbox.paypal.com/AdaptivePayments/' if DEBUG else 'https://svcs.paypal.com/AdaptivePayments/')
+PAYPAL_PAYMENT_HOST = getattr(settings, 'PAYPAL_PAYMENT_HOST', 'https://www.sandbox.paypal.com/au/cgi-bin/webscr' if DEBUG else 'https://www.paypal.com/webscr')
+PAYPAL_EMBEDDED_ENDPOINT = getattr(settings, 'PAYPAL_EMBEDDED_ENDPOINT', 'https://www.sandbox.paypal.com/webapps/adaptivepayment/flow/pay' if DEBUG else 'https://paypal.com/webapps/adaptivepayment/flow/pay')
+PAYPAL_APPLICATION_ID = getattr(settings, 'PAYPAL_APPLICATION_ID', 'APP-80W284485P519543T')
 
 # These settings are required
 PAYPAL_USERID = settings.PAYPAL_USERID
