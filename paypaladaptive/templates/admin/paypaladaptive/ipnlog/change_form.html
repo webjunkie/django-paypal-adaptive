@@ -5,30 +5,29 @@
 <div class="inline-group">
 <h2>POST</h2>
 <div>
-	<table>
-	{% for k,v in original.post_to_dict.items %}
-		<tr>
-			<th>{{ k }}</th>
-			{% if k == 'transactions' %}
-			<td>
-				{% for tr in v %}
-				<h3>Index: {{ tr.index }}</h3>
-				<table>
-					{% for tr_k, tr_v in tr.items %}
-					<tr>
-						<th>{{ tr_k }}</th>
-						<td>{{ tr_v }}</td>
-					</th>
-					{% endfor %}
-				</table>
-				{% endfor %}
-			{% else %}
-			<td>{{ v }}</td>
-			{% endif %}
-		</tr>
-	{% endfor %}
-	</table>
-
+    <table>
+    {% for k,v in original.post_to_dict.items %}
+        <tr>
+            <th>{{ k }}</th>
+            {% if k == 'transactions' %}
+            <td>
+                {% for tr in v %}
+                <h3>Index: {{ tr.index }}</h3>
+                <table>
+                    {% for tr_k, tr_v in tr.items %}
+                    <tr>
+                        <th>{{ tr_k }}</th>
+                        <td>{{ tr_v }}</td>
+                    </th>
+                    {% endfor %}
+                </table>
+                {% endfor %}
+            {% else %}
+            <td>{{ v }}</td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </table>
 </div>
 </div>
 {% endif %}
