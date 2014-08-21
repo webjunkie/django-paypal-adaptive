@@ -1,4 +1,5 @@
 """Models to support Paypal Adaptive API"""
+import ast
 import logging
 from datetime import datetime, timedelta
 
@@ -470,3 +471,17 @@ class IPNLog(models.Model):
     class Meta:
         verbose_name = _(u"IPN Log")
         verbose_name_plural = _(u"IPN Log")
+
+    def post_to_dict(self):
+        from paypaladaptive.api.ipn import IPN
+
+        data = ast.literal_eval(self.post)
+        transactions = IPN.process_transactions(data)
+        for k,v in data.items():
+            if k.startswith("transaction["):
+                del data[k]
+        data['transactions'] = [tr.to_dict() for tr in transactions]
+        return data
+
+    def post_to_json(self):
+        return json.dumps(self.post_to_dict())

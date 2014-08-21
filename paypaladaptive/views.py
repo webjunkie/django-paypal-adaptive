@@ -159,21 +159,35 @@ def preapproval_return(request, preapproval_id, secret_uuid,
 @takes_ipn
 def ipn(request, object_id, object_secret_uuid, ipn):
     """
-    Incoming IPN POST request from Paypal
-
+    Incoming IPN POST request from PayPal
     """
     object_class = {
         constants.IPN_TYPE_PAYMENT: Payment,
         constants.IPN_TYPE_PREAPPROVAL: Preapproval,
         constants.IPN_TYPE_ADJUSTMENT: Payment
-    }[ipn.type]
+    }.get(ipn.type, None)
 
-    try:
-        obj = object_class.objects.get(pk=object_id)
-    except object_class.DoesNotExist:
-        logger.warning('Could not find %s ID %s, replying to IPN with '
-                       '404.', object_class.__name__, object_id)
-        raise Http404
+    if object_class is None:
+        obj = None
+        for model in (Payment, Preapproval):
+            try:
+                obj = model.objects.get(pk=object_id)
+            except model.DoesNotExist:
+                continue
+        if obj is None:
+            logger.warning(
+                'No transaction type was specified and could not find ID %s, '
+                'replying to IPN with 404.',
+                object_id,
+                )
+            raise Http404
+    else:
+        try:
+            obj = object_class.objects.get(pk=object_id)
+        except object_class.DoesNotExist:
+            logger.warning('Could not find %s ID %s, replying to IPN with '
+                           '404.', object_class.__name__, object_id)
+            raise Http404
 
     obj.sender_email = ipn.sender_email
 
@@ -181,7 +195,7 @@ def ipn(request, object_id, object_secret_uuid, ipn):
         obj.status = 'error'
         obj.status_detail = ('IPN secret "%s" did not match db'
                              % object_secret_uuid)
-        logger.debug("Error detail: %s", obj.status_detail)
+        logger.info("Error detail: %s", obj.status_detail)
         obj.save()
         return HttpResponseBadRequest()
 
@@ -201,14 +215,13 @@ def ipn(request, object_id, object_secret_uuid, ipn):
             obj.status_detail = ("IPN amounts didn't match. Payment requested "
                                  "%s. Payment made %s"
                                  % (obj.money, ipn_total_money))
-            logger.debug("Error detail: %s", obj.status_detail)
+            logger.info("Error detail: %s", obj.status_detail)
 
         # check payment status
-        elif request.POST.get('status', '') != 'COMPLETED':
+        elif ipn.status != 'COMPLETED':
             obj.status = 'error'
-            obj.status_detail = ('PayPal status was "%s"'
-                                 % request.POST.get('status'))
-            logger.debug("Error detail: %s", obj.status_detail)
+            obj.status_detail = ('PayPal status was "%s"' % ipn.status)
+            logger.info("Error detail: %s", obj.status_detail)
         else:
             obj.status = 'completed'
 
@@ -220,7 +233,7 @@ def ipn(request, object_id, object_secret_uuid, ipn):
                 "IPN amounts didn't match. Preapproval requested %s. "
                 "Preapproval made %s"
                 % (obj.money, ipn.max_total_amount_of_all_payments))
-            logger.debug("Error detail: %s", obj.status_detail)
+            logger.info("Error detail: %s", obj.status_detail)
         elif ipn.status == constants.IPN_STATUS_CANCELED:
             obj.status = 'canceled'
             obj.status_detail = 'Cancellation received via IPN'

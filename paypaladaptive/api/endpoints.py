@@ -53,7 +53,7 @@ class PaypalAdaptiveEndpoint(object):
         self.raw_response = request.response
         self.response = json.loads(request.response)
 
-        logger.debug('headers are: %s', str(self.headers))
+        # logger.debug('headers are: %s', str(self.headers))
         logger.debug('request is: %s', str(self.data))
         logger.debug('response is: %s', str(self.raw_response))
 

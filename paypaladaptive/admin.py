@@ -28,9 +28,10 @@ class RefundAdmin(admin.ModelAdmin):
 
 class IPNLogAdmin(admin.ModelAdmin):
     list_display = (
-        'created_date', 'verify_request_response',
+        'created_date', 'path', 'verify_request_response',
         'return_status_code', 'duration',
         )
+    list_filter = ('verify_request_response', 'return_status_code')
 
 
 admin.site.register(models.Payment, PaymentAdmin)

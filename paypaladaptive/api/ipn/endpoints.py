@@ -24,22 +24,32 @@ logger = logging.getLogger(__name__)
 
 class Transaction(object):
 
-    def __init__(self, **kwargs):
+    def __init__(self, index, **kwargs):
+        self.index = index
         self.id = kwargs.get('id', None)
         self.status = kwargs.get('status', None)
         self.id_for_sender = kwargs.get('id_for_sender', None)
-        self.status_for_sender_txn = kwargs.get('status_for_sender_txn',
-                                                None)
+        self.id_for_sender_txn = kwargs.get('id_for_sender_txn', None)
+        self.payment_type = kwargs.get('paymentType', None)
+        self.pending_reason = kwargs.get('pending_reason', None)
+        self.status_for_sender_txn = \
+            kwargs.get('status_for_sender_txn', None)
         self.refund_id = kwargs.get('refund_id', None)
-        self.refund_amount = IPN.process_money(kwargs.get('refund_amount',
-                                                          None))
-        self.refund_account_charged = kwargs.get('refund_account_charged',
-                                                 None)
+        self.refund_amount = IPN.process_money(
+            kwargs.get('refund_amount', None)
+            )
+        self.refund_account_charged = \
+            kwargs.get('refund_account_charged', None)
         self.receiver = kwargs.get('receiver', None)
         self.invoiceId = kwargs.get('invoiceId', None)
         self.amount = IPN.process_money(kwargs.get('amount', None))
-        self.is_primary_receiver = (kwargs.get('is_primary_receiver', '')
-                                    == 'true')
+        self.is_primary_receiver = \
+            kwargs.get('is_primary_receiver', '') == 'true'
+
+    def to_dict(self):
+        data = dict((k, v) for k, v in self.__dict__.items() if v is not None)
+        data['amount'] = str(data['amount'])
+        return data
 
     @classmethod
     def slicedict(cls, d, s):
@@ -58,7 +68,7 @@ class IPN(object):
     Models the IPN API response
 
     Note that this model is specific to the Paypal Adaptive API; it cannot
-    handle IPNs from the standard Paypal checkout.
+    handle IPNs from the standard PayPal checkout.
 
     """
     def __init__(self, request):
@@ -76,12 +86,12 @@ class IPN(object):
 
         # verify that the request is paypal's
         url = '%s?cmd=_notify-validate' % settings.PAYPAL_PAYMENT_HOST
-        post_data = {}
-        for k, v in request.POST.copy().iteritems():
-            post_data[k] = unicode(v).encode('utf-8')
-        data = urllib.urlencode(post_data)
-        verify_request = UrlRequest().call(url, data=data)
-        # verify_request = UrlRequest().call(url, data=request.body)
+        # post_data = {}
+        # for k, v in request.POST.copy().iteritems():
+        #     post_data[k] = unicode(v).encode('utf-8')
+        # data = urllib.urlencode(post_data)
+        # verify_request = UrlRequest().call(url, data=data)
+        verify_request = UrlRequest().call(url, data=request.body)
 
         # check code
         if verify_request.code != 200:
@@ -97,16 +107,20 @@ class IPN(object):
             raise IpnError('PayPal response was "%s"' % raw_response)
 
         # check transaction type
-        raw_type = request.POST.get('transaction_type', '')
-        allowed_types = [IPN_TYPE_PAYMENT, IPN_TYPE_ADJUSTMENT,
-                         IPN_TYPE_PREAPPROVAL]
+        raw_type = request.POST.get('transaction_type', None)
+        allowed_types = [
+            IPN_TYPE_PAYMENT,
+            IPN_TYPE_ADJUSTMENT,
+            IPN_TYPE_PREAPPROVAL,
+            None,
+            ]
 
         if raw_type in allowed_types:
             self.type = raw_type
         else:
             raise IpnError('Unknown transaction_type received: %s' % raw_type)
 
-        self.process_transactions(request)
+        self.transactions = self.process_transactions(request.POST)
 
         try:
             # payments and adjustments define these
@@ -173,7 +187,6 @@ class IPN(object):
         """
         Attempt to turn strings into integers (or longs if long enough.)
         Doesn't trap the ValueError so bad values raise the exception.
-
         """
         val = default
 
@@ -189,9 +202,8 @@ class IPN(object):
     @classmethod
     def process_money(cls, money_str):
         """
-        Paypal sends money in the form "XXX 0.00" where XXX is the currency
+        PayPal sends money in the form "XXX 0.00" where XXX is the currency
         code and 0.00 is the amount
-
         """
         if money_str:
             money_args = str(money_str).split(' ', 1)
@@ -206,27 +218,29 @@ class IPN(object):
         """
         Paypal sends dates in the form "Thu Jun 09 07:23:38 PDT 2011", where
         the timezone appears to always be (US) Pacific.
-
         """
         if not date_str:
             return None
 
         return parse(date_str, tzinfos=IPN_TIMEZONES).astimezone(utc)
 
-    def process_transactions(self, request):
+    @classmethod
+    def process_transactions(cls, data):
         """
-        Paypal sends transactions in the form transaction[n].[attribute], where
+        PayPal sends transactions in the form transaction[n].[attribute], where
         n is 0 - 5 inclusive. We'll attempt to pull POST dictionary keys
         matching each transaction and build an IPN. Transaction object from
         them.
         """
-        self.transactions = []
+        transactions = []
 
         transaction_nums = range(6)
         for transaction_num in transaction_nums:
-            transdict = Transaction.slicedict(request.POST, 'transaction[%s].' % transaction_num)
+            transdict = Transaction.slicedict(data, 'transaction[%s].' % transaction_num)
             if len(transdict) > 0:
-                self.transactions.append(Transaction(**transdict))
+                transactions.append(Transaction(transaction_num, **transdict))
+
+        return transactions
 
     def get_transactions_total_money(self):
         """
