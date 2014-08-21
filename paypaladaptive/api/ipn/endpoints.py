@@ -48,7 +48,8 @@ class Transaction(object):
 
     def to_dict(self):
         data = dict((k, v) for k, v in self.__dict__.items() if v is not None)
-        data['amount'] = str(data['amount'])
+        for name in ('amount', 'refund_amount'):
+            data[name] = str(data[name])
         return data
 
     @classmethod
