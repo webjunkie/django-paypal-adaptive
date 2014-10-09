@@ -343,7 +343,6 @@ class Preapproval(PaypalAdaptive):
     preapproval_key = models.CharField(_(u'preapprovalkey'), max_length=255)
     status = models.CharField(_(u'status'), max_length=10,
                               choices=STATUS_CHOICES, default='new')
-    status_detail = models.TextField(_(u'detailed status'))
     status_detail = models.TextField(_(u'detailed status'), blank=True)
 
     def save(self, *args, **kwargs):
