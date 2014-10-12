@@ -72,6 +72,28 @@ payment.process(receivers)
 redirect_url = payment.next_url()
 ```
 
+Implicit payment:
+Implicit approval payments, in which your application is both the sender of a payment and the caller of the Adaptive Payments Pay API. In this case, PayPal makes the payment from your own account, which eliminates the need for approval.
+Set the senderEmail to your account when you call the process method.
+
+```python
+from paypaladaptive.models import Payment
+from moneyed import Money, USD
+from paypaladaptive.api import ReceiverList, Receiver
+from paypaladaptive.settings import PAYPAL_EMAIL
+
+receiver = Receiver(amount=10, email="receiver1@example.com")
+receivers = ReceiverList([receiver])
+
+payment = Payment()
+payment.money = Money(receivers.total_amount, USD)
+payment.save()
+payment.process(
+    receivers,
+    senderEmail=PAYPAL_EMAIL,
+    )
+```
+
 Parallel payment with 2 receivers:
 
 ```python
