@@ -22,25 +22,28 @@ logger = logging.getLogger(__name__)
 class PaypalAdaptiveEndpoint(object):
     """Base class for all Paypal endpoints"""
 
-    headers = {}
-    data = {'requestEnvelope': {'errorLanguage': 'en_US'}, }
-    raw_response = None
-    response = None
     error_class = Exception
     url = None
 
     def __init__(self, *args, **kwargs):
+        self.data = {'requestEnvelope': {'errorLanguage': 'en_US'}}
+        self.headers = {}
+        self.raw_response = None
+        self.response = None
+
         remote_address = kwargs.pop('remote_address', None)
         self._build_headers(remote_address=remote_address)
         self.data.update(self.prepare_data(*args, **kwargs))
 
     def _build_headers(self, remote_address=None):
-        headers = {'X-PAYPAL-SECURITY-USERID': settings.PAYPAL_USERID,
-                   'X-PAYPAL-SECURITY-PASSWORD': settings.PAYPAL_PASSWORD,
-                   'X-PAYPAL-SECURITY-SIGNATURE': settings.PAYPAL_SIGNATURE,
-                   'X-PAYPAL-REQUEST-DATA-FORMAT': 'JSON',
-                   'X-PAYPAL-RESPONSE-DATA-FORMAT': 'JSON',
-                   'X-PAYPAL-APPLICATION-ID': settings.PAYPAL_APPLICATION_ID}
+        headers = {
+            'X-PAYPAL-SECURITY-USERID': settings.PAYPAL_USERID,
+            'X-PAYPAL-SECURITY-PASSWORD': settings.PAYPAL_PASSWORD,
+            'X-PAYPAL-SECURITY-SIGNATURE': settings.PAYPAL_SIGNATURE,
+            'X-PAYPAL-REQUEST-DATA-FORMAT': 'JSON',
+            'X-PAYPAL-RESPONSE-DATA-FORMAT': 'JSON',
+            'X-PAYPAL-APPLICATION-ID': settings.PAYPAL_APPLICATION_ID,
+            }
 
         if remote_address:
             headers['X-PAYPAL-DEVICE-IPADDRESS'] = remote_address
