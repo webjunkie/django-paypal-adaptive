@@ -94,6 +94,33 @@ payment.process(
     )
 ```
 
+Specify allowed funding selections for a payment:
+If the 'fundingConstraing' field is omitted, the payment can be funded by any funding type that is supported for Adaptive Payments. Allowable values are:
+    ECHECK – Electronic check
+    BALANCE – PayPal account balance
+    CREDITCARD – Credit card
+Note: ECHECK and CREDITCARD include BALANCE implicitly.
+
+```python
+from paypaladaptive.models import Payment
+from moneyed import Money, USD
+from paypaladaptive.api import ReceiverList, Receiver
+from paypaladaptive.settings import PAYPAL_EMAIL
+
+receiver = Receiver(amount=10, email="receiver1@example.com")
+receivers = ReceiverList([receiver])
+
+payment = Payment()
+payment.money = Money(receivers.total_amount, USD)
+payment.save()
+# only PayPal account balance payment allowed
+payment.process(
+    receivers,
+    fundingConstraint={'allowedFundingType': [{'fundingTypeInfo': {'fundingType': 'BALANCE'}}]},
+    )
+```
+
+
 Parallel payment with 2 receivers:
 
 ```python
