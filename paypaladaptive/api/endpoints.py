@@ -7,6 +7,8 @@ try:
 except ImportError:
     import django.utils.simplejson as json
 
+from django.core.serializers.json import DjangoJSONEncoder
+
 from moneyed import Money
 
 from paypaladaptive import settings
@@ -51,8 +53,11 @@ class PaypalAdaptiveEndpoint(object):
         self.headers.update(headers)
 
     def call(self):
-        request = UrlRequest().call(self.url, data=json.dumps(self.data),
-                                    headers=self.headers)
+        request = UrlRequest().call(
+            self.url,
+            data=json.dumps(self.data, cls=DjangoJSONEncoder),
+            headers=self.headers,
+            )
         self.raw_response = request.response
         self.response = json.loads(request.response)
 
@@ -84,10 +89,18 @@ class PaypalAdaptiveEndpoint(object):
                                   "prepare_data method.")
 
     def pretty_response(self):
-        print json.dumps(json.loads(self.raw_response), indent=4)
+        print json.dumps(
+            json.loads(self.raw_response),
+            indent=4,
+            cls=DjangoJSONEncoder,
+            )
 
     def pretty_request(self):
-        print json.dumps(self.data, indent=4)
+        print json.dumps(
+            self.data,
+            indent=4,
+            cls=DjangoJSONEncoder,
+            )
 
 
 class Pay(PaypalAdaptiveEndpoint):

@@ -3,6 +3,7 @@ import ast
 import logging
 from datetime import datetime, timedelta
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.urlresolvers import reverse
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
@@ -47,7 +48,7 @@ class PaypalAdaptive(models.Model):
         try:
             res = endpoint.call()
         finally:
-            self.debug_request = json.dumps(endpoint.data)
+            self.debug_request = json.dumps(endpoint.data, cls=DjangoJSONEncoder)
             self.debug_response = endpoint.raw_response
             self.save()
 
@@ -241,7 +242,9 @@ class Payment(PaypalAdaptive):
                         payError['message'])
                 else:
                     self.status_detail = json.dumps(
-                        endpoint.response.payErrorList)
+                        endpoint.response.payErrorList,
+                        cls=DjangoJSONEncoder,
+                        )
 
         elif endpoint.status == 'COMPLETED':
             self.status = 'completed'
@@ -271,8 +274,12 @@ class Payment(PaypalAdaptive):
         self.save()
 
         refund = Refund(payment=self,
-                        debug_request=json.dumps(refund_call.data),
-                        debug_response=refund_call.raw_response)
+                        debug_request=json.dumps(
+                            refund_call.data,
+                            cls=DjangoJSONEncoder,
+                            ),
+                        debug_response=refund_call.raw_response,
+                        )
         refund.save()
 
     def get_update_kwargs(self):
@@ -483,4 +490,4 @@ class IPNLog(models.Model):
         return data
 
     def post_to_json(self):
-        return json.dumps(self.post_to_dict())
+        return json.dumps(self.post_to_dict(), cls=DjangoJSONEncoder)

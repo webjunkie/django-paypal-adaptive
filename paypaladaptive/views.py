@@ -50,7 +50,7 @@ def payment_cancel(request, payment_id, secret_uuid,
                                 secret_uuid=secret_uuid)
 
     if payment.status in ('completed',):
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest('Already completed.')
 
     payment.status = 'canceled'
     payment.save()

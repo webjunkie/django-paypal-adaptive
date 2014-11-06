@@ -3,6 +3,7 @@ try:
 except ImportError:
     import django.utils.simplejson as json
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.test import TestCase
 
 from mock import patch
@@ -33,7 +34,7 @@ class MockUpdateRequest(object):
     @classmethod
     def set_response(cls, response):
         response.update(cls._base_response)
-        cls._response = json.dumps(response)
+        cls._response = json.dumps(response, cls=DjangoJSONEncoder)
 
 
 class TestPreapprovalUpdate(TestCase):
