@@ -172,7 +172,7 @@ class Payment(PaypalAdaptive):
         cancel_url = reverse('paypal-adaptive-payment-cancel', kwargs=kwargs)
         return "%s://%s%s" % (get_http_protocol(), current_site, cancel_url)
 
-    @transaction.autocommit
+    @transaction.atomic
     def process(self, receivers, preapproval=None, **kwargs):
         """Process the payment"""
         if self.status != 'new':
@@ -257,7 +257,7 @@ class Payment(PaypalAdaptive):
 
         return self.status in ['created', 'completed']
 
-    @transaction.autocommit
+    @transaction.atomic
     def refund(self):
         """Refund this payment"""
 
@@ -379,7 +379,7 @@ class Preapproval(PaypalAdaptive):
                              kwargs=kwargs)
         return "%s://%s%s" % (get_http_protocol(), current_site, cancel_url)
 
-    @transaction.autocommit
+    @transaction.atomic
     def process(self, **kwargs):
         """Process the preapproval"""
 
@@ -416,7 +416,7 @@ class Preapproval(PaypalAdaptive):
 
         return self.status == 'created'
 
-    @transaction.autocommit
+    @transaction.atomic
     def cancel_preapproval(self):
         res, cancel = self.call(api.CancelPreapproval,
                                 preapproval_key=self.preapproval_key)
@@ -427,7 +427,7 @@ class Preapproval(PaypalAdaptive):
         self.save()
         return self.status == 'canceled'
 
-    @transaction.autocommit
+    @transaction.atomic
     def mark_as_used(self):
         self.status = 'used'
         self.save()
