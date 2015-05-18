@@ -6,6 +6,7 @@ DEBUG = getattr(settings, "DEBUG", False)
 
 
 PAYPAL_ENDPOINT = getattr(settings, 'PAYPAL_ENDPOINT', 'https://svcs.sandbox.paypal.com/AdaptivePayments/' if DEBUG else 'https://svcs.paypal.com/AdaptivePayments/')
+PAYPAL_ENDPOINT_ACCOUNTS = getattr(settings, 'PAYPAL_ENDPOINT_ACCOUNTS', 'https://svcs.sandbox.paypal.com/AdaptiveAccounts/' if DEBUG else 'https://svcs.paypal.com/AdaptiveAccounts/')
 PAYPAL_PAYMENT_HOST = getattr(settings, 'PAYPAL_PAYMENT_HOST', 'https://www.sandbox.paypal.com/au/cgi-bin/webscr' if DEBUG else 'https://www.paypal.com/webscr')
 PAYPAL_EMBEDDED_ENDPOINT = getattr(settings, 'PAYPAL_EMBEDDED_ENDPOINT', 'https://www.sandbox.paypal.com/webapps/adaptivepayment/flow/pay' if DEBUG else 'https://paypal.com/webapps/adaptivepayment/flow/pay')
 PAYPAL_APPLICATION_ID = getattr(settings, 'PAYPAL_APPLICATION_ID', 'APP-80W284485P519543T')

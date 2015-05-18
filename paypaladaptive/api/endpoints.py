@@ -268,6 +268,24 @@ class PreapprovalDetails(PaypalAdaptiveEndpoint):
         return {'preapprovalKey': preapprovalKey}
 
 
+class GetVerifiedStatus(PaypalAdaptiveEndpoint):
+    """
+    Models the PreapprovalDetails API operation.
+    Use this to retrieve data about a Preapproval from Paypal
+
+    """
+
+    url = '%s%s' % (settings.PAYPAL_ENDPOINT_ACCOUNTS, 'GetVerifiedStatus')
+    error_class = PaypalAdaptiveApiError
+
+    def prepare_data(self, email_address, first_name, last_name):
+        """Prepare data for PreapprovalDetails API call"""
+        return {'emailAddress': email_address,
+                'firstName': first_name,
+                'lastName': last_name,
+                'matchCriteria': "NAME"}
+
+
 class ShippingAddress(PaypalAdaptiveEndpoint):
     url = '%s%s' % (settings.PAYPAL_ENDPOINT, 'GetShippingAddresses')
 
