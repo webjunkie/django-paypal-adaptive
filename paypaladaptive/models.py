@@ -30,7 +30,7 @@ class PaypalAdaptive(models.Model):
     money = MoneyField(_(u'money'), max_digits=settings.MAX_DIGITS,
                        decimal_places=settings.DECIMAL_PLACES)
     created_date = models.DateTimeField(_(u'created on'), auto_now_add=True)
-    secret_uuid = ShortUUIDField(_(u'secret UUID'))  # to verify return_url
+    secret_uuid = ShortUUIDField(verbose_name=_(u'secret UUID'))  # to verify return_url
     debug_request = models.TextField(_(u'raw request'), blank=True, null=True)
     debug_response = models.TextField(_(u'raw response'), blank=True,
                                       null=True)
